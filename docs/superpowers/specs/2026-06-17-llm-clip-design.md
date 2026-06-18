@@ -51,10 +51,9 @@ on the clipboard, `llm-clip` errors.
 
 ### Image normalisation
 
-Clipboard images that are not already PNG (commonly `image/tiff` from macOS
-screenshots, or `image/jpeg`) are transcoded to PNG with [Pillow](https://pillow.readthedocs.io/)
-before being attached, so `llm` always receives `image/png` for image content.
-PNG data is passed through untouched.
+Because Tiff images are not commonly accepted (but are often provided on older MacOS programs), they are transcoded to PNG with [Pillow](https://pillow.readthedocs.io/)
+before being attached.
+PNG and JPEG data is passed through untouched.
 
 ### Argument passing
 
@@ -84,7 +83,7 @@ src/llm_clip/
   cli.py        orchestration + manual argv split + running llm
   select.py     pure: choose mimetype from (available types, forced type)
   clipboard.py  Backend interface + Mac/Linux implementations + get_backend()
-  images.py     ensure_png(data, mimetype) -> (png_bytes, "image/png")
+  images.py     normalise_image(data, mimetype) -> (bytes, mimetype)
 ```
 
 ### `select.py` (pure)
@@ -103,7 +102,7 @@ src/llm_clip/
   2. `backend = get_backend()`
   3. `mimetype = choose(backend.available_types(), opts.force_type)`
   4. `data = backend.read(mimetype)`
-  5. if image and not png: `data, mimetype = ensure_png(data, mimetype)`
+  5. if `mimetype == "image/tiff"`: `data, mimetype = normalise_image(data, mimetype)`
   6. write `data` to a `NamedTemporaryFile` with an extension from `mimetypes`
   7. build `["llm", "--at", path, mimetype, *passthrough]`
   8. `--dry-run`: print command, keep file, exit 0. Otherwise `subprocess.run`,
@@ -132,9 +131,10 @@ src/llm_clip/
 
 ### `images.py`
 
-- `ensure_png(data: bytes, mimetype: str) -> tuple[bytes, str]` — if `mimetype`
-  is already `image/png`, return unchanged; otherwise open with Pillow and
-  re-encode to PNG, returning `(png_bytes, "image/png")`.
+- `normalise_image(data: bytes, mimetype: str) -> tuple[bytes, str]` — if
+  `mimetype` is `image/tiff`, open with Pillow and re-encode to PNG, returning
+  `(png_bytes, "image/png")`. Any other mimetype (including `image/png` and
+  `image/jpeg`) is returned unchanged.
 
 ## Error handling
 
@@ -169,8 +169,8 @@ pytest, TDD red/green. The pure units carry the coverage:
   with `llm` flags.
 - command building + temp-file lifecycle against a **fake backend** and a fake
   subprocess runner (assert the `llm` argv, assert cleanup / `--keep` / `--dry-run`).
-- `images.ensure_png` — png passthrough unchanged; a small generated TIFF/JPEG
-  transcodes to valid PNG.
+- `images.normalise_image` — a small generated TIFF transcodes to valid PNG;
+  PNG and JPEG are returned byte-for-byte unchanged.
 
 Platform backends (PyObjC / shelling out) are thin and exercised by an
 end-to-end smoke test: copy known content to the clipboard, run the built
