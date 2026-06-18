@@ -37,3 +37,8 @@ def test_help_flag():
 def test_force_type_missing_value_raises():
     with pytest.raises(ClipError):
         split_args(["--force-type"])
+
+
+def test_force_type_equals_empty_raises():
+    with pytest.raises(ClipError):
+        split_args(["--force-type="])

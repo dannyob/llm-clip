@@ -31,7 +31,10 @@ def split_args(argv: list[str]) -> tuple[Options, list[str]]:
             i += 2
             continue
         if tok.startswith("--force-type="):
-            opts.force_type = tok.split("=", 1)[1]
+            value = tok.split("=", 1)[1]
+            if not value:
+                raise ClipError("--force-type requires a value")
+            opts.force_type = value
         elif tok == "--keep":
             opts.keep = True
         elif tok == "--dry-run":
