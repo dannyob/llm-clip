@@ -157,3 +157,20 @@ def test_main_llm_not_found(capsys, tmp_path):
     assert "llm" in capsys.readouterr().err
     # temp file must be cleaned up even when llm is missing
     assert not os.path.exists(recorded["cmd"][2])
+
+
+def test_main_read_failure_is_clean_error(capsys):
+    from llm_clip.errors import NoUsableContent
+
+    class FailingReadBackend:
+        def available_types(self):
+            return ["image/png"]
+
+        def read(self, mimetype):
+            raise NoUsableContent("no clipboard data for image/png")
+
+    rc = main(["go"], backend=FailingReadBackend(), runner=FakeRunner())
+    err = capsys.readouterr().err
+    assert rc == 1
+    assert err.startswith("llm-clip:")
+    assert "Traceback" not in err

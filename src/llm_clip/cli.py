@@ -97,11 +97,10 @@ def main(argv: list[str] | None = None, *, backend=None, runner=subprocess.run) 
 
     try:
         mimetype = choose(backend.available_types(), opts.force_type)
+        data = backend.read(mimetype)
     except ClipError as exc:
         print(f"llm-clip: {exc}", file=sys.stderr)
         return 1
-
-    data = backend.read(mimetype)
     if mimetype == "image/tiff":
         data, mimetype = normalise_image(data, mimetype)
 

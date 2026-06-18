@@ -15,7 +15,7 @@ def normalise_image(data: bytes, mimetype: str) -> tuple[bytes, str]:
     if mimetype != "image/tiff":
         return data, mimetype
 
-    image = Image.open(io.BytesIO(data))
+    img = Image.open(io.BytesIO(data))
     out = io.BytesIO()
-    image.save(out, format="PNG")
+    img.save(out, format="PNG")
     return out.getvalue(), "image/png"

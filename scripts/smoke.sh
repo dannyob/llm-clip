@@ -21,6 +21,7 @@ echo "$out" | grep -q ' image/png ' || fail "expected image/png, got: $out"
 
 # 3. TIFF on the clipboard -> transcoded to image/png
 tmp_tiff="$(mktemp -t llmclip).tiff"
+trap 'rm -f "$tmp_png" "$tmp_tiff"' EXIT
 uv run python -c "from PIL import Image; Image.new('RGB',(8,8),(50,100,200)).save('$tmp_tiff')"
 osascript -e "set the clipboard to (read (POSIX file \"$tmp_tiff\") as «class TIFF»)"
 out="$(uv run llm-clip --dry-run 'go')"
