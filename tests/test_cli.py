@@ -146,10 +146,14 @@ def test_main_no_usable_content_errors(capsys):
 
 def test_main_llm_not_found(capsys, tmp_path):
     backend = FakeBackend(["text/plain"], b"x")
+    recorded = {}
 
     def boom(cmd):
+        recorded["cmd"] = cmd
         raise FileNotFoundError("llm")
 
     rc = main(["go"], backend=backend, runner=boom)
     assert rc == 127
     assert "llm" in capsys.readouterr().err
+    # temp file must be cleaned up even when llm is missing
+    assert not os.path.exists(recorded["cmd"][2])

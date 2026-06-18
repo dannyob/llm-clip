@@ -129,5 +129,8 @@ def main(argv: list[str] | None = None, *, backend=None, runner=subprocess.run) 
     finally:
         if opts.keep:
             print(f"llm-clip: kept {path}", file=sys.stderr)
-        elif os.path.exists(path):
-            os.unlink(path)
+        else:
+            try:
+                os.unlink(path)
+            except FileNotFoundError:
+                pass
