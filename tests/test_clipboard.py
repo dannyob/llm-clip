@@ -1,3 +1,4 @@
+import pytest
 from llm_clip.clipboard import (
     UTI_TO_MIME,
     normalise_linux_type,
@@ -5,6 +6,7 @@ from llm_clip.clipboard import (
     LinuxBackend,
     get_backend,
 )
+from llm_clip.errors import NoUsableContent
 
 
 def test_uti_mapping_has_core_types():
@@ -17,6 +19,7 @@ def test_uti_mapping_has_core_types():
 def test_normalise_linux_text_atoms():
     assert normalise_linux_type("UTF8_STRING") == "text/plain"
     assert normalise_linux_type("STRING") == "text/plain"
+    assert normalise_linux_type("TEXT") == "text/plain"
     assert normalise_linux_type("text/plain;charset=utf-8") == "text/plain"
     assert normalise_linux_type("image/png") == "image/png"
     assert normalise_linux_type("text/html") == "text/html"
@@ -46,6 +49,17 @@ def test_linux_backend_available_and_read_use_runner():
     backend = LinuxBackend(tool="wl-paste", run=fake_run)
     assert set(backend.available_types()) == {"image/png", "text/plain"}
     assert backend.read("image/png") == b"PNGDATA"
+
+
+def test_linux_backend_read_unsupported_raises():
+    def fake_run(args):
+        if "--list-types" in args:
+            return b"text/plain\n"
+        return b"should-not-reach"
+
+    backend = LinuxBackend(tool="wl-paste", run=fake_run)
+    with pytest.raises(NoUsableContent):
+        backend.read("image/jpeg")
 
 
 def test_get_backend_returns_something():

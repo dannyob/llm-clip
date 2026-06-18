@@ -113,7 +113,9 @@ class LinuxBackend:
     def read(self, mimetype: str) -> bytes:
         if not self._map:
             self.available_types()
-        raw_target = self._map.get(mimetype, mimetype)
+        if mimetype not in self._map:
+            raise NoUsableContent(f"no clipboard data for {mimetype}")
+        raw_target = self._map[mimetype]
         return self._run(self._read_args(raw_target))
 
 
